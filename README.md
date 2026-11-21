@@ -6,7 +6,7 @@
 CD Log Checker GUI puts a simple window on top of hbcl, the EAC / XLD rip log
 checker. Drop a log file onto the window and you get the score, the list of
 deductions, and the full log with color coding, so bad settings and rip errors
-stand out right away. It is a single `.exe` with nothing to install.
+stand out right away. It is portable: unzip it and run, with nothing to install.
 
 ![CD Log Checker GUI showing a scored EAC log](screenshots/screenshot.png)
 
@@ -22,28 +22,52 @@ stand out right away. It is a single `.exe` with nothing to install.
 - **Translate** foreign EAC logs to English.
 - **Experimental integrity check** (EAC / XLD checksum verification, from hbcl).
 - **Copy** the report to the clipboard, or **Save as...** plain text or colored HTML.
-- **Portable**: one file, no installer, no Python needed.
+- **Portable**: no installer and no Python needed. Run it from any folder or a USB stick.
 - Bad input (unrecognized logs, broken encodings, non-log files) is reported in
   the window; it does not crash the app.
 
 ## Download and use
 
 1. Go to the [**Releases**](https://github.com/AgiLityOps/CD-Log-Checker-GUI/releases) page and download
-   `CD-Log-Checker-GUI.exe` from the latest release
-2. Double-click the `.exe`. To open the program
-3. Drag a `.log` file from Explorer onto the window (or click **Open log...**).
-4. Tick **Translate** or **Experimental integrity check** if you need them; the
+   `CD-Log-Checker-GUI-vX.Y.Z-win64-folder.zip` from the latest release
+2. Right-click the zip and choose **Extract All...**. Extract it anywhere you like
+   (Desktop, Documents, a USB stick...). Make sure you extract **all** the files;
+   don't run the exe from inside the zip.
+3. Open the extracted `CD-Log-Checker-GUI` folder and double-click
+   `CD-Log-Checker-GUI.exe` to open the program.
+   - Keep the `_internal` folder next to the exe. The app needs it. To move the app,
+     move the whole `CD-Log-Checker-GUI` folder.
+   - Nothing is installed. To remove the app, delete the folder.
+4. Drag a `.log` file from Explorer onto the window (or click **Open log...**).
+5. Tick **Translate** or **Experimental integrity check** if you need them; the
    loaded logs are re-checked immediately.
 
 Keyboard shortcuts: `Ctrl+O` open, `Ctrl+S` save, `Ctrl+A` select all, `Ctrl+C` copy selection.
+
+## Want a single .exe?
+
+Official releases ship the folder version only, because single-file PyInstaller
+exes are much more likely to be flagged by antivirus programs as a false positive.
+If you'd still like one self-contained `.exe`, you can build it yourself in a few
+minutes, on your own PC or for free with GitHub Actions. Follow
+**[Build a single .exe yourself](docs/BUILDING.md#build-a-single-exe-yourself)**.
+
+## VirusTotal
+
+The v0.1.2 release was scanned on VirusTotal on 21 November 2026 with no detections:
+
+| File | Result | SHA-256 |
+|---|---|---|
+| [`CD-Log-Checker-GUI-v0.1.2-win64-folder.zip`](https://www.virustotal.com/gui/file/2a5073ca9b922525c0ca9d206a7c13fd0850d88a66a7c488cf33bb10ebc7cc58) (download) | **0 / 65** | `2a5073ca9b922525c0ca9d206a7c13fd0850d88a66a7c488cf33bb10ebc7cc58` |
+| [`CD-Log-Checker-GUI.exe`](https://www.virustotal.com/gui/file/2cb6ffc8dd8bb48c60ad9dcbf7767d74233489b6468ad910be2dffa1174ef4dc) (inside the zip) | **0 / 71** | `2cb6ffc8dd8bb48c60ad9dcbf7767d74233489b6468ad910be2dffa1174ef4dc` |
 
 ## Building it yourself
 
 See **[docs/BUILDING.md](docs/BUILDING.md)** for a step-by-step guide, written
 for beginners. It covers:
 
-- getting a ready-made `.exe` from GitHub Actions (no tools needed on your PC),
-- building on your own Windows PC,
+- getting a ready-made build from GitHub Actions (no tools needed on your PC),
+- building on your own Windows PC, as a folder or as a single `.exe`,
 - moving to a newer version of hbcl,
 - fixing common errors.
 
@@ -53,11 +77,13 @@ Quick version for developers (Windows, Python 3.12 or 3.13, Git installed):
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements-build.txt
+set HBCL_GUI_ONEDIR=1
 pyinstaller --clean --noconfirm hbcl_gui.spec
 ```
 
-The result is `dist\CD-Log-Checker-GUI.exe`. To run from source instead:
-`python run_hbcl_gui.py`.
+The result is the folder `dist\CD-Log-Checker-GUI\`. Leave out
+`set HBCL_GUI_ONEDIR=1` (in a new Command Prompt) to get a single
+`dist\CD-Log-Checker-GUI.exe` instead. To run from source: `python run_hbcl_gui.py`.
 
 ## Credits and thanks
 
@@ -100,13 +126,15 @@ AI-generated and then reviewed and tested by the maintainer. It is provided
 
 ## Known issues
 
-- **Antivirus / SmartScreen warnings.** Unsigned single-file PyInstaller apps
-  are sometimes flagged as false positives. Release builds use a PyInstaller
-  bootloader compiled from source (no UPX) to reduce this, and a folder
-  version is provided as an alternative. You can build the exe yourself (see
-  [docs/BUILDING.md](docs/BUILDING.md)) if you prefer.
-- **Slow first start.** The single-file exe unpacks itself to a temporary
-  folder each time it starts, so it can take a second or two to open.
+- **Windows SmartScreen.** The app isn't code-signed, so Windows may show
+  "Windows protected your PC" the first time. Click **More info**, then **Run anyway**.
+- **Antivirus.** Release builds use a PyInstaller bootloader compiled from
+  source, no UPX, and the folder layout, which scanned clean (see
+  [VirusTotal](#virustotal)). Single-file builds you make yourself are more
+  likely to be flagged by mistake.
+- **"Failed to load Python DLL" / missing files.** The exe was started without
+  its `_internal` folder, or from inside the zip. Extract the whole zip and keep
+  the folder together.
 - hbcl's markup for some EAC 0.95 track headers is slightly malformed; the app
   repairs it before displaying it.
 

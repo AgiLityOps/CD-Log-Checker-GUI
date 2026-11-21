@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for CD Log Checker GUI. Build on Windows (x64) with:
 #     pyinstaller --clean --noconfirm hbcl_gui.spec
-# Produces a single-file, windowed (no console) dist/CD-Log-Checker-GUI.exe.
-# Set the environment variable HBCL_GUI_ONEDIR=1 to build a folder instead:
+# Default: a single-file, windowed (no console) dist/CD-Log-Checker-GUI.exe.
+# Set HBCL_GUI_ONEDIR=1 to build the folder version (what official releases ship):
 #     dist/CD-Log-Checker-GUI/CD-Log-Checker-GUI.exe (+ _internal/)
 import os
 import platform

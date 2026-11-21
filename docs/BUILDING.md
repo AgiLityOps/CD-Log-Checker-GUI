@@ -1,15 +1,31 @@
 # Building CD Log Checker GUI
 
-This guide explains how to get your own copy of `CD-Log-Checker-GUI.exe`.
-You do **not** need to be a programmer. Pick the part that fits you:
+This guide explains how to build CD Log Checker GUI yourself. You do **not**
+need to be a programmer. Pick the part that fits you:
 
-- **Part A**: let GitHub build the exe for you (easiest, nothing to install).
-- **Part B**: build the exe on your own Windows PC.
+- **Part A**: let GitHub build it for you (easiest, nothing to install).
+- **Part B**: build it on your own Windows PC.
+- **[Build a single .exe yourself](#build-a-single-exe-yourself)**: if you want
+  one self-contained `.exe` instead of a folder.
 - **Part C**: update the app to a newer version of hbcl.
 - **Part D**: fixing common problems.
 
 If you only want to *use* the app, you don't need this guide. Just download the
-exe from the [Releases page](https://github.com/AgiLityOps/CD-Log-Checker-GUI/releases).
+zip from the [Releases page](https://github.com/AgiLityOps/CD-Log-Checker-GUI/releases).
+
+### Folder version vs. single .exe
+
+The app can be built two ways from the same code:
+
+| | Folder version (official) | Single .exe |
+|---|---|---|
+| What you get | A `CD-Log-Checker-GUI` folder containing `CD-Log-Checker-GUI.exe` and an `_internal` folder | One file, `CD-Log-Checker-GUI.exe` |
+| How to share it | Zip the whole folder | Copy the one file |
+| Start-up | Fast | Slower (unpacks itself to a temp folder on every start) |
+| Antivirus false positives | Rare (the v0.1.2 release scanned 0/71) | More likely |
+
+Official releases are the **folder version**. The single .exe is for people who
+build it themselves.
 
 ---
 
@@ -19,24 +35,27 @@ exe from the [Releases page](https://github.com/AgiLityOps/CD-Log-Checker-GUI/re
 
 GitHub Actions is a free service where GitHub runs a script for you on one of
 its own computers. This repository has a script (called a *workflow*) in
-[`.github/workflows/build.yml`](../.github/workflows/build.yml). It:
+[`.github/workflows/build.yml`](../.github/workflows/build.yml), named
+**Build Windows exe**. It:
 
 1. starts a fresh Windows computer in the cloud,
-2. installs Python and everything the app needs,
-3. runs the tests,
-4. builds `CD-Log-Checker-GUI.exe` (single file) and a folder version, and
-   checks that both start,
-5. puts them in a **draft** release for you to check and publish.
+2. installs Python, and compiles PyInstaller's starter program (the
+   "bootloader") from source, which helps avoid antivirus false positives,
+3. installs everything else the app needs and runs the tests,
+4. builds the folder version (and, if you ask for it, a single .exe) and checks
+   that it starts,
+5. zips the result.
 
 The workflow starts in two ways:
 
 | How it starts | What you get |
 |---|---|
-| You push a **tag** whose name starts with `v` (for example `v0.1.2`) | A **draft Release** on the Releases page with the exe, a zip, and a folder-version zip attached. Only you can see a draft until you publish it |
-| You click **Run workflow** in the Actions tab | The exe and the folder version as downloadable **artifacts** on the run's page (no Release) |
+| You push a **tag** whose name starts with `v` (for example `v0.1.3`) | A **draft Release** on the Releases page with one file attached: `CD-Log-Checker-GUI-v0.1.3-win64-folder.zip`. Only you can see a draft until you publish it |
+| You click **Run workflow** in the Actions tab | The folder version as a downloadable **artifact** on the run's page (no Release). Tick **Also build a single-file exe** to also get a single .exe artifact |
 
 Releases start as drafts on purpose, so you can upload the files to a virus
-scanner such as [VirusTotal](https://www.virustotal.com) before anyone else can download them.
+scanner such as [VirusTotal](https://www.virustotal.com) before anyone else can
+download them. A single .exe is **never** attached to a Release.
 
 ### Step 1: Get your own copy of the repository (a "fork")
 
@@ -58,61 +77,69 @@ GitHub switches Actions off in new forks for safety.
 
 If you don't see that button, Actions is already on.
 
-### Step 3 (option 1): Make a Release from the website
+### Step 3: Start a build
+
+Pick **one** of these three options.
+
+#### Option 1: Make a release from the website
 
 1. In your fork, click **Releases** (right-hand side of the main page;
    or go to `https://github.com/YOUR-NAME/CD-Log-Checker-GUI/releases`).
 2. Click **Draft a new release**.
-3. Click **Choose a tag**, type a new version such as `v0.1.2`, then click
-   **Create new tag: v0.1.2 on publish**.
+3. Click **Choose a tag**, type a new version such as `v0.1.3`, then click
+   **Create new tag: v0.1.3 on publish**.
    The name **must start with a lowercase `v`**, otherwise the workflow won't start.
-4. Type a title if you like (for example `v0.1.2`) and click **Publish release**.
+4. Type a title if you like (for example `v0.1.3`) and click **Publish release**.
 5. Publishing creates the tag, and the tag starts the workflow. While it attaches
-   the files, the workflow switches this release back to a **draft**. That is
+   the zip, the workflow switches this release back to a **draft**. That is
    expected. Wait for Step 4, then follow Step 5 to publish it again.
 
-### Step 3 (option 2): Push a tag from the command line
+#### Option 2: Push a tag from the command line
 
 If you have Git installed and a clone of your fork (see Part B, steps 2 and 3):
 
 ```bat
 git pull
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
-The push starts the workflow. The workflow creates a draft Release by itself.
+The push starts the workflow. The workflow creates a draft release by itself.
 
-### Step 3 (option 3): Run it by hand, no Release
+#### Option 3: Run it by hand (no release)
 
 1. Click the **Actions** tab.
 2. In the left list, click **Build Windows exe**.
-3. Click **Run workflow** (right side), keep the branch as `main`, and click the
-   green **Run workflow** button.
-4. When the run finishes, open it and scroll to **Artifacts**. Download
-   **CD-Log-Checker-GUI-win64** (a zip containing the exe).
+3. Click **Run workflow** (right side). Keep the branch as `main`.
+   Tick **Also build a single-file exe** if you want a single .exe too.
+4. Click the green **Run workflow** button.
+5. When the run finishes, open it and scroll down to **Artifacts**:
+   - **CD-Log-Checker-GUI-win64-folder**: the folder version,
+   - **CD-Log-Checker-GUI-win64-singlefile**: the single .exe (only if you ticked the box).
+
+   Each one downloads as a zip. Artifacts are deleted automatically after 90 days.
 
 ### Step 4: Watch the build
 
 1. Click the **Actions** tab. Your run appears at the top with a yellow dot
    while it is running.
 2. Click it, then click the **build** job to see each step live.
-3. It takes about 3 to 6 minutes. A green check means success, a red cross
+3. It takes about 2 to 5 minutes. A green check means success, a red cross
    means something failed (see Part D).
 
-### Step 5: Download the exe
+### Step 5: Download, check and publish
 
 1. Click **Releases** (or go to `https://github.com/YOUR-NAME/CD-Log-Checker-GUI/releases`).
-2. Find the release marked **Draft**, for example **CD Log Checker GUI v0.1.2**.
-3. Under **Assets** you'll find:
-   - `CD-Log-Checker-GUI.exe`: the single-file app,
-   - `CD-Log-Checker-GUI-v0.1.2-win64.zip`: the same exe plus the license files,
-   - `CD-Log-Checker-GUI-v0.1.2-win64-folder.zip`: the folder version. Unzip it
-     and run `CD-Log-Checker-GUI.exe` inside. It starts faster, and antivirus
-     programs flag it less often.
-4. Optional: download the files and scan them on VirusTotal.
+2. Find the release marked **Draft**, for example **CD Log Checker GUI v0.1.3**.
+3. Under **Assets**, download `CD-Log-Checker-GUI-v0.1.3-win64-folder.zip`.
+4. Optional but recommended: upload the zip (and the `CD-Log-Checker-GUI.exe`
+   inside it) to [VirusTotal](https://www.virustotal.com) and check the result.
 5. To make the release public, click the **pencil (Edit)** icon on the draft,
    then click **Publish release**.
+
+To use the app: extract **all** files from the zip, open the
+`CD-Log-Checker-GUI` folder and run `CD-Log-Checker-GUI.exe`. Keep the
+`_internal` folder next to the exe.
 
 ---
 
@@ -189,22 +216,24 @@ python run_hbcl_gui.py
 
 The window should open. Close it when you're done.
 
-### Step 7: Build the exe
+### Step 7: Build the folder version (same as the official release)
 
 ```bat
+set HBCL_GUI_ONEDIR=1
 pyinstaller --clean --noconfirm hbcl_gui.spec
 ```
 
-It takes about a minute. (For the folder version, run `set HBCL_GUI_ONEDIR=1`
-first; the result goes to `dist\CD-Log-Checker-GUI\`.) When it prints
-`Build complete!`, your exe is at:
+It takes about a minute. When it prints `Build complete!`, the app is in:
 
 ```
-dist\CD-Log-Checker-GUI.exe
+dist\CD-Log-Checker-GUI\CD-Log-Checker-GUI.exe
+dist\CD-Log-Checker-GUI\_internal\
 ```
 
-You can copy that single file anywhere and run it. The `build` folder is
-temporary and can be deleted.
+Copy or zip the whole `dist\CD-Log-Checker-GUI` folder to use or share it. The
+`build` folder is temporary and can be deleted.
+
+`set HBCL_GUI_ONEDIR=1` only lasts until you close the Command Prompt.
 
 ### Step 8 (optional): Run the tests
 
@@ -214,6 +243,57 @@ git clone https://github.com/doujincafe/hbcl ..\hbcl
 set HBCL_TESTS=..\hbcl\tests\logs
 python -m pytest -q
 ```
+
+> **Note:** a build made on your own PC uses PyInstaller's prebuilt bootloader,
+> while the official builds compile it from source. To do the same locally you
+> need the free "Build Tools for Visual Studio" (with "Desktop development with
+> C++") and then run
+> `set PYINSTALLER_COMPILE_BOOTLOADER=1` followed by
+> `pip install --force-reinstall --no-binary pyinstaller pyinstaller==6.22.3`
+> before building.
+
+---
+
+## Build a single .exe yourself
+
+Official releases are the folder version only. If you want **one
+self-contained `.exe`**, build it yourself using one of the two ways below.
+
+> **Heads-up:** single-file PyInstaller exes are more often flagged by antivirus
+> programs as a *false positive* (they unpack themselves to a temp folder when
+> started, which some scanners find suspicious). This is why official releases
+> don't include one. If your antivirus complains about an exe you built
+> yourself from this source, you can add an exception for it, or use the
+> folder version.
+
+### Way 1: On your own Windows PC
+
+1. Do **Part B, steps 1 to 5** above (install Python and Git, clone, create
+   the virtual environment, install the requirements).
+2. Open a **new** Command Prompt (so `HBCL_GUI_ONEDIR` is not set), go to the
+   project folder and activate the virtual environment:
+
+   ```bat
+   cd %USERPROFILE%\Documents\CD-Log-Checker-GUI
+   .venv\Scripts\activate
+   ```
+
+3. Build. Without `HBCL_GUI_ONEDIR`, the spec builds a single file by default:
+
+   ```bat
+   pyinstaller --clean --noconfirm hbcl_gui.spec
+   ```
+
+   (If you already set it in this window, run `set HBCL_GUI_ONEDIR=` first to clear it.)
+4. Your exe is at `dist\CD-Log-Checker-GUI.exe`. Copy that one file anywhere and run it.
+
+### Way 2: With GitHub Actions (nothing to install)
+
+1. Do **Part A, steps 1 and 2** (fork the repository and enable Actions).
+2. Follow **Part A, Step 3, Option 3**, and **tick "Also build a single-file exe"**.
+3. When the run finishes, download the **CD-Log-Checker-GUI-win64-singlefile**
+   artifact. It is a zip containing `CD-Log-Checker-GUI.exe` (plus the license
+   files). Extract the zip and run the exe.
 
 ---
 
@@ -233,9 +313,10 @@ The app uses hbcl at one exact, tested version (a *commit*). To move to a newer 
    You can edit files right on GitHub: open the file, click the pencil icon,
    change it, then click **Commit changes**.
 3. Optionally raise the app version in `src/hbcl_gui/__init__.py`
-   (`__version__`), `pyproject.toml` (`version`) and `version_info.txt`.
+   (`__version__`), `pyproject.toml` (`version`), `version_info.txt` and
+   `assets/app.manifest`.
 4. Make a new release with a new tag, for example `v0.1.3` (Part A, Step 3).
-   The status bar of the new exe shows the hbcl version it contains.
+   The status bar of the new build shows the hbcl version it contains.
 
 ---
 
@@ -243,14 +324,20 @@ The app uses hbcl at one exact, tested version (a *commit*). To move to a newer 
 
 **The workflow didn't start after I made a tag.**
 - Actions might be disabled in your fork (Part A, Step 2).
-- The tag must start with a lowercase `v`, for example `v0.1.2`.
+- The tag must start with a lowercase `v`, for example `v0.1.3`.
 - The workflow file must exist in the commit the tag points to.
+
+**I don't see the "Also build a single-file exe" checkbox.**
+It appears after you click **Run workflow** in the Actions tab, on the
+**Build Windows exe** workflow. If it's missing, your fork has an old copy of
+the workflow: update your fork (**Sync fork** button on its main page).
 
 **I want to rebuild the same version (re-use a tag).**
 Delete the old release and tag, then create them again:
 on the website, open the release, click the trash icon to delete it, then go to
 **Tags**, open the tag and delete it. On the command line:
-`git tag -d v0.1.2`, `git push origin :refs/tags/v0.1.2`, then tag and push again.
+`git tag -d v0.1.3`, `git push origin :refs/tags/v0.1.3`, then tag and push again.
+Note that a rebuilt file has a different SHA-256, so scan it again.
 
 **The workflow failed (red cross).**
 Click the failed run, then the red step, to read the error. Common causes:
@@ -259,6 +346,11 @@ Click the failed run, then the red step, to read the error. Common causes:
   **Read and write permissions**, save, and run it again.
 - A failure in **Run tests** after you changed the hbcl commit: the new hbcl
   version may behave differently. Go back to the previous commit ID or report it.
+
+**The app says "Failed to load Python DLL" or closes immediately (folder version).**
+The exe can't find its `_internal` folder. Extract **all** files from the zip
+(don't run it from inside the zip) and keep `CD-Log-Checker-GUI.exe` and
+`_internal` in the same folder.
 
 **`'python' is not recognized as an internal or external command`.**
 Python isn't on your PATH. Re-run the Python installer, choose **Modify**, and
@@ -276,12 +368,14 @@ Python 3.13 and create the virtual environment again.
 Use Command Prompt (`cmd`) instead, or run
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` in PowerShell once.
 
+**I got a folder when I wanted a single .exe (or the other way round).**
+The `HBCL_GUI_ONEDIR` setting decides. `set HBCL_GUI_ONEDIR=1` gives a folder;
+a new Command Prompt (or `set HBCL_GUI_ONEDIR=`) gives a single .exe.
+
 **Windows says "Windows protected your PC", or antivirus deletes the exe.**
-The exe isn't code-signed, so this can happen. The workflow compiles
-PyInstaller's starter program (the "bootloader") from source to reduce false
-alarms, and the folder version is flagged less often than the single file. Click **More info > Run anyway**.
-If antivirus removed it, restore it from quarantine or add an exception for
-the file you built yourself.
+The app isn't code-signed, so this can happen. Click **More info > Run anyway**.
+If antivirus removed an exe you built yourself, restore it from quarantine or
+add an exception, or use the folder version, which is flagged much less often.
 
 **Drag and drop doesn't work.**
 Windows blocks dragging from a normal window into a program running as
