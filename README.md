@@ -29,12 +29,8 @@ stand out right away. It is a single `.exe` with nothing to install.
 ## Download and use
 
 1. Go to the [**Releases**](https://github.com/AgiLityOps/CD-Log-Checker-GUI/releases) page and download
-   `CD-Log-Checker-GUI.exe` from the latest release (a `.zip` with the license
-   files is also attached).
-2. Double-click the `.exe`. Because it is not code-signed, Windows SmartScreen
-   may show *"Windows protected your PC"*. Click **More info**, then
-   **Run anyway**. Some antivirus programs also flag unsigned PyInstaller apps
-   by mistake; see [Known issues](#known-issues).
+   `CD-Log-Checker-GUI.exe` from the latest release
+2. Double-click the `.exe`. To open the program
 3. Drag a `.log` file from Explorer onto the window (or click **Open log...**).
 4. Tick **Translate** or **Experimental integrity check** if you need them; the
    loaded logs are re-checked immediately.
