@@ -1,0 +1,81 @@
+name: Build Windows exe
+
+# Runs when a tag starting with "v" is pushed (e.g. v0.1.2) -> builds the exe
+# and publishes a GitHub Release with it attached.
+# Can also be started by hand from the Actions tab ("Run workflow"); manual runs
+# build the exe and upload it as a downloadable artifact, but do not make a Release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  EXE_NAME: CD-Log-Checker-GUI.exe
+  # hbcl commit used for the test logs; keep in sync with requirements.txt
+  HBCL_COMMIT: 93ec71d2d3b1b196d9b51a3d7a6f9e1012923ac9
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          architecture: x64
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # faust-cchardet must come from a prebuilt wheel, never from source
+          python -m pip install --only-binary=faust-cchardet -r requirements-build.txt pytest
+
+      - name: Run tests against hbcl sample logs
+        shell: bash
+        run: |
+          git clone https://github.com/doujincafe/hbcl ../hbcl
+          git -C ../hbcl checkout "$HBCL_COMMIT"
+          HBCL_TESTS=../hbcl/tests/logs python -m pytest -q
+
+      - name: Build exe
+        run: pyinstaller --clean --noconfirm hbcl_gui.spec
+
+      - name: Smoke test exe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\$env:EXE_NAME" -ArgumentList '--selftest', '..\hbcl\tests\logs\EAC\perf-hunid.log', 'selftest.txt' -Wait -PassThru
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { throw "selftest exit code $($p.ExitCode)" }
+          if (-not (Select-String -Path selftest.txt -Pattern 'score=100' -Quiet)) { throw 'unexpected score' }
+          if (-not (Select-String -Path selftest.txt -Pattern 'dnd_ok=True' -Quiet)) { throw 'drag and drop not bundled' }
+
+      - name: Package zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item "dist\$env:EXE_NAME", LICENSE, NOTICE release\
+          Compress-Archive -Path release\* -DestinationPath "CD-Log-Checker-GUI-${{ github.ref_name }}-win64.zip"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CD-Log-Checker-GUI-win64
+          path: |
+            dist/${{ env.EXE_NAME }}
+            CD-Log-Checker-GUI-*-win64.zip
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CD Log Checker GUI ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/${{ env.EXE_NAME }}
+            CD-Log-Checker-GUI-*-win64.zip

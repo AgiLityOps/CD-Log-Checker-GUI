@@ -1,0 +1,25 @@
+CD Log Checker GUI
+Copyright 2026 CD Log Checker GUI contributors
+
+This product is an unofficial graphical front end for hey-bro-check-log
+(hbcl). It is not affiliated with or endorsed by the hbcl authors or
+maintainers.
+
+This product bundles (in the Windows executable) and depends on
+hey-bro-check-log, licensed under the Apache License, Version 2.0:
+  - Original hey-bro-check-log by ligh7s
+    https://github.com/ligh7s/hey-bro-check-log
+  - Maintained by the doujin café Discord community
+    https://github.com/doujincafe/hbcl
+  - EAC checksum check implementation from eac_logsigner by puddly
+    https://github.com/puddly/eac_logsigner
+  - XLD checksum check implementation from xld_logchecker.py by OPSnet
+    https://github.com/OPSnet/xld_logchecker.py
+
+The Windows executable additionally bundles third-party components under
+their own licenses:
+  - CPython (Python Software Foundation License) and Tcl/Tk (Tcl/Tk license)
+  - tkinterdnd2 (MIT) and the tkdnd extension (BSD-style)
+  - chardet (LGPL-2.1+ / see package), faust-cchardet (MPL-1.1/GPL/LGPL),
+    pprp (see package)
+  - PyInstaller bootloader (GPL-2.0 with bootloader exception)

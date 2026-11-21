@@ -1,0 +1,36 @@
+[project]
+name = "cd-log-checker-gui"
+version = "0.1.1"
+description = "Unofficial drag-and-drop desktop GUI for hey-bro-check-log (hbcl), the EAC/XLD rip log checker."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.12, <3.15"
+dependencies = [
+    # hbcl is not on PyPI; pinned to a known-good commit of doujincafe/hbcl (v1.4.10)
+    "heybrochecklog @ git+https://github.com/doujincafe/hbcl@93ec71d2d3b1b196d9b51a3d7a6f9e1012923ac9",
+    "tkinterdnd2==0.7.0",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.10"]
+dev = ["pytest>=8"]
+
+[project.gui-scripts]
+cd-log-checker-gui = "hbcl_gui.app:main"
+
+[project.urls]
+"hbcl (upstream)" = "https://github.com/doujincafe/hbcl"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hbcl_gui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
