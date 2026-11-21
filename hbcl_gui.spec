@@ -2,6 +2,8 @@
 # PyInstaller spec for CD Log Checker GUI. Build on Windows (x64) with:
 #     pyinstaller --clean --noconfirm hbcl_gui.spec
 # Produces a single-file, windowed (no console) dist/CD-Log-Checker-GUI.exe.
+# Set the environment variable HBCL_GUI_ONEDIR=1 to build a folder instead:
+#     dist/CD-Log-Checker-GUI/CD-Log-Checker-GUI.exe (+ _internal/)
 import os
 import platform
 
@@ -23,7 +25,10 @@ if platform.system() == "Windows":
         datas.append((os.path.join(tkdnd_dir, name), "tkinterdnd2/tkdnd/win-x64"))
 
 # Ship the licence/notice inside the bundle too (they also go next to the exe).
-datas += [("LICENSE", "."), ("NOTICE", ".")]
+datas += [("LICENSE", "."), ("NOTICE", "."), ("assets/app.ico", "assets")]
+
+ONEDIR = os.environ.get("HBCL_GUI_ONEDIR") == "1"
+NAME = "CD-Log-Checker-GUI"
 
 a = Analysis(
     ["run_hbcl_gui.py"],
@@ -40,20 +45,22 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.datas,
-    [],
-    name="CD-Log-Checker-GUI",
+common = dict(
+    name=NAME,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,  # UPX makes antivirus false positives worse
-    runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
-    icon=None,
+    icon="assets/app.ico",
     version="version_info.txt",
+    manifest="assets/app.manifest",
+    uac_admin=False,
 )
+
+if ONEDIR:
+    exe = EXE(pyz, a.scripts, [], exclude_binaries=True, **common)
+    coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name=NAME)
+else:
+    exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], runtime_tmpdir=None, **common)

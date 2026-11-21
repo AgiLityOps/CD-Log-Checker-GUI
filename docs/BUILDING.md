@@ -24,15 +24,19 @@ its own computers. This repository has a script (called a *workflow*) in
 1. starts a fresh Windows computer in the cloud,
 2. installs Python and everything the app needs,
 3. runs the tests,
-4. builds `CD-Log-Checker-GUI.exe` and checks that it starts,
-5. publishes it.
+4. builds `CD-Log-Checker-GUI.exe` (single file) and a folder version, and
+   checks that both start,
+5. puts them in a **draft** release for you to check and publish.
 
 The workflow starts in two ways:
 
 | How it starts | What you get |
 |---|---|
-| You push a **tag** whose name starts with `v` (for example `v0.1.2`) | A new **Release** on the Releases page with the exe and a zip attached |
-| You click **Run workflow** in the Actions tab | The exe as a downloadable **artifact** on the run's page (no Release) |
+| You push a **tag** whose name starts with `v` (for example `v0.1.2`) | A **draft Release** on the Releases page with the exe, a zip, and a folder-version zip attached. Only you can see a draft until you publish it |
+| You click **Run workflow** in the Actions tab | The exe and the folder version as downloadable **artifacts** on the run's page (no Release) |
+
+Releases start as drafts on purpose, so you can upload the files to a virus
+scanner such as [VirusTotal](https://www.virustotal.com) before anyone else can download them.
 
 ### Step 1: Get your own copy of the repository (a "fork")
 
@@ -63,8 +67,9 @@ If you don't see that button, Actions is already on.
    **Create new tag: v0.1.2 on publish**.
    The name **must start with a lowercase `v`**, otherwise the workflow won't start.
 4. Type a title if you like (for example `v0.1.2`) and click **Publish release**.
-5. Publishing creates the tag, and the tag starts the workflow. The workflow
-   then attaches the exe to that same release. Wait for Step 4.
+5. Publishing creates the tag, and the tag starts the workflow. While it attaches
+   the files, the workflow switches this release back to a **draft**. That is
+   expected. Wait for Step 4, then follow Step 5 to publish it again.
 
 ### Step 3 (option 2): Push a tag from the command line
 
@@ -76,7 +81,7 @@ git tag v0.1.2
 git push origin v0.1.2
 ```
 
-The push starts the workflow. The workflow creates the Release by itself.
+The push starts the workflow. The workflow creates a draft Release by itself.
 
 ### Step 3 (option 3): Run it by hand, no Release
 
@@ -98,9 +103,16 @@ The push starts the workflow. The workflow creates the Release by itself.
 ### Step 5: Download the exe
 
 1. Click **Releases** (or go to `https://github.com/YOUR-NAME/CD-Log-Checker-GUI/releases`).
-2. Open the release you just made, for example **CD Log Checker GUI v0.1.2**.
-3. Under **Assets**, download `CD-Log-Checker-GUI.exe` (or the
-   `CD-Log-Checker-GUI-v0.1.2-win64.zip`, which also includes the license files).
+2. Find the release marked **Draft**, for example **CD Log Checker GUI v0.1.2**.
+3. Under **Assets** you'll find:
+   - `CD-Log-Checker-GUI.exe`: the single-file app,
+   - `CD-Log-Checker-GUI-v0.1.2-win64.zip`: the same exe plus the license files,
+   - `CD-Log-Checker-GUI-v0.1.2-win64-folder.zip`: the folder version. Unzip it
+     and run `CD-Log-Checker-GUI.exe` inside. It starts faster, and antivirus
+     programs flag it less often.
+4. Optional: download the files and scan them on VirusTotal.
+5. To make the release public, click the **pencil (Edit)** icon on the draft,
+   then click **Publish release**.
 
 ---
 
@@ -183,7 +195,9 @@ The window should open. Close it when you're done.
 pyinstaller --clean --noconfirm hbcl_gui.spec
 ```
 
-It takes about a minute. When it prints `Build complete!`, your exe is at:
+It takes about a minute. (For the folder version, run `set HBCL_GUI_ONEDIR=1`
+first; the result goes to `dist\CD-Log-Checker-GUI\`.) When it prints
+`Build complete!`, your exe is at:
 
 ```
 dist\CD-Log-Checker-GUI.exe
@@ -240,7 +254,7 @@ on the website, open the release, click the trash icon to delete it, then go to
 
 **The workflow failed (red cross).**
 Click the failed run, then the red step, to read the error. Common causes:
-- *"Resource not accessible by integration"* during **Publish GitHub Release**:
+- *"Resource not accessible by integration"* during **Create draft GitHub Release**:
   go to **Settings > Actions > General > Workflow permissions**, choose
   **Read and write permissions**, save, and run it again.
 - A failure in **Run tests** after you changed the hbcl commit: the new hbcl
@@ -263,7 +277,9 @@ Use Command Prompt (`cmd`) instead, or run
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` in PowerShell once.
 
 **Windows says "Windows protected your PC", or antivirus deletes the exe.**
-The exe isn't code-signed, so this can happen. Click **More info > Run anyway**.
+The exe isn't code-signed, so this can happen. The workflow compiles
+PyInstaller's starter program (the "bootloader") from source to reduce false
+alarms, and the folder version is flagged less often than the single file. Click **More info > Run anyway**.
 If antivirus removed it, restore it from quarantine or add an exception for
 the file you built yourself.
 

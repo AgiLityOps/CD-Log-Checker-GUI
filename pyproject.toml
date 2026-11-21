@@ -1,6 +1,6 @@
 [project]
 name = "cd-log-checker-gui"
-version = "0.1.1"
+version = "0.1.2"
 description = "Unofficial drag-and-drop desktop GUI for hey-bro-check-log (hbcl), the EAC/XLD rip log checker."
 readme = "README.md"
 license = "Apache-2.0"

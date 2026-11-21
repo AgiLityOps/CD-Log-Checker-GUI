@@ -71,6 +71,7 @@ class HbclApp:
         root.geometry("1000x760")
         root.minsize(560, 360)
         root.report_callback_exception = self._on_tk_error
+        self._set_icon()
 
         self.mono = pick_mono_font(root)
         self.font = tkfont.Font(root, family=self.mono, size=FONT_SIZE)
@@ -92,6 +93,16 @@ class HbclApp:
         root.bind("<Control-o>", lambda e: self.open_dialog())
         root.bind("<Control-s>", lambda e: self.save_as())
         root.bind("<Control-Shift-C>", lambda e: self.copy_all())
+
+    def _set_icon(self):
+        base = getattr(sys, "_MEIPASS", None) or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..")
+        ico = os.path.join(base, "assets", "app.ico")
+        try:
+            if sys.platform == "win32" and os.path.isfile(ico):
+                self.root.iconbitmap(default=ico)
+        except Exception:
+            pass
 
     # ----------------------------------------------------------------- layout
     def _button(self, parent, text, command):

@@ -101,7 +101,9 @@ AI-generated and then reviewed and tested by the maintainer. It is provided
 ## Known issues
 
 - **Antivirus / SmartScreen warnings.** Unsigned single-file PyInstaller apps
-  are sometimes flagged as false positives. You can build the exe yourself (see
+  are sometimes flagged as false positives. Release builds use a PyInstaller
+  bootloader compiled from source (no UPX) to reduce this, and a folder
+  version is provided as an alternative. You can build the exe yourself (see
   [docs/BUILDING.md](docs/BUILDING.md)) if you prefer.
 - **Slow first start.** The single-file exe unpacks itself to a temporary
   folder each time it starts, so it can take a second or two to open.

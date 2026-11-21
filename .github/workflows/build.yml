@@ -1,7 +1,8 @@
 name: Build Windows exe
 
 # Runs when a tag starting with "v" is pushed (e.g. v0.1.2) -> builds the exe
-# and publishes a GitHub Release with it attached.
+# (single file + folder version) and creates a DRAFT GitHub Release with them
+# attached. Review/scan the files, then publish the draft on the Releases page.
 # Can also be started by hand from the Actions tab ("Run workflow"); manual runs
 # build the exe and upload it as a downloadable artifact, but do not make a Release.
 on:
@@ -16,6 +17,8 @@ env:
   EXE_NAME: CD-Log-Checker-GUI.exe
   # hbcl commit used for the test logs; keep in sync with requirements.txt
   HBCL_COMMIT: 93ec71d2d3b1b196d9b51a3d7a6f9e1012923ac9
+  # keep in sync with requirements-build.txt
+  PYINSTALLER_VERSION: "6.22.3"
 
 jobs:
   build:
@@ -30,9 +33,28 @@ jobs:
           python-version: "3.13"
           architecture: x64
 
-      - name: Install dependencies
+      - name: Install PyInstaller with a bootloader compiled from source
+        # A freshly compiled bootloader (instead of the prebuilt one shipped in
+        # PyInstaller's wheel, which is shared by thousands of apps, including
+        # malware) greatly reduces antivirus false positives. Uses the MSVC
+        # toolchain that is preinstalled on the windows-latest runner.
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: "1"
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -v --no-cache-dir --no-binary pyinstaller "pyinstaller==${{ env.PYINSTALLER_VERSION }}"
+
+      - name: Show bootloader that will be used
+        shell: pwsh
+        run: |
+          $dir = python -c "import os, PyInstaller; print(os.path.join(os.path.dirname(PyInstaller.__file__), 'bootloader', 'Windows-64bit-intel'))"
+          Get-ChildItem $dir | Format-Table Name, Length, LastWriteTime
+          Get-FileHash "$dir\runw.exe" -Algorithm SHA256 | Format-List
+          $age = (Get-Date) - (Get-Item "$dir\runw.exe").LastWriteTime
+          if ($age.TotalMinutes -gt 60) { throw "runw.exe is not freshly compiled (age $age)" }
+
+      - name: Install app dependencies
+        run: |
           # faust-cchardet must come from a prebuilt wheel, never from source
           python -m pip install --only-binary=faust-cchardet -r requirements-build.txt pytest
 
@@ -43,26 +65,39 @@ jobs:
           git -C ../hbcl checkout "$HBCL_COMMIT"
           HBCL_TESTS=../hbcl/tests/logs python -m pytest -q
 
-      - name: Build exe
+      - name: Build single-file exe
         run: pyinstaller --clean --noconfirm hbcl_gui.spec
 
-      - name: Smoke test exe
-        shell: pwsh
-        run: |
-          $p = Start-Process -FilePath "dist\$env:EXE_NAME" -ArgumentList '--selftest', '..\hbcl\tests\logs\EAC\perf-hunid.log', 'selftest.txt' -Wait -PassThru
-          Get-Content selftest.txt
-          if ($p.ExitCode -ne 0) { throw "selftest exit code $($p.ExitCode)" }
-          if (-not (Select-String -Path selftest.txt -Pattern 'score=100' -Quiet)) { throw 'unexpected score' }
-          if (-not (Select-String -Path selftest.txt -Pattern 'dnd_ok=True' -Quiet)) { throw 'drag and drop not bundled' }
+      - name: Build folder (onedir) version
+        env:
+          HBCL_GUI_ONEDIR: "1"
+        run: pyinstaller --clean --noconfirm --distpath dist-folder --workpath build-folder hbcl_gui.spec
 
-      - name: Package zip
+      - name: Smoke test both builds
         shell: pwsh
         run: |
+          foreach ($exe in @("dist\$env:EXE_NAME", "dist-folder\CD-Log-Checker-GUI\$env:EXE_NAME")) {
+            Write-Host "=== $exe"
+            Remove-Item selftest.txt -ErrorAction SilentlyContinue
+            $p = Start-Process -FilePath $exe -ArgumentList '--selftest', '..\hbcl\tests\logs\EAC\perf-hunid.log', 'selftest.txt' -Wait -PassThru
+            Get-Content selftest.txt
+            if ($p.ExitCode -ne 0) { throw "selftest exit code $($p.ExitCode) for $exe" }
+            if (-not (Select-String -Path selftest.txt -Pattern 'score=100' -Quiet)) { throw "unexpected score for $exe" }
+            if (-not (Select-String -Path selftest.txt -Pattern 'dnd_ok=True' -Quiet)) { throw "drag and drop not bundled in $exe" }
+          }
+
+      - name: Package zips
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
           New-Item -ItemType Directory -Force release | Out-Null
           Copy-Item "dist\$env:EXE_NAME", LICENSE, NOTICE release\
-          Compress-Archive -Path release\* -DestinationPath "CD-Log-Checker-GUI-${{ github.ref_name }}-win64.zip"
+          Compress-Archive -Path release\* -DestinationPath "CD-Log-Checker-GUI-$ver-win64.zip"
+          Copy-Item LICENSE, NOTICE "dist-folder\CD-Log-Checker-GUI\"
+          Compress-Archive -Path "dist-folder\CD-Log-Checker-GUI" -DestinationPath "CD-Log-Checker-GUI-$ver-win64-folder.zip"
+          Get-FileHash "dist\$env:EXE_NAME", "dist-folder\CD-Log-Checker-GUI\$env:EXE_NAME", *.zip -Algorithm SHA256 | Format-Table Hash, Path -AutoSize
 
-      - name: Upload build artifact
+      - name: Upload single-file artifact
         uses: actions/upload-artifact@v4
         with:
           name: CD-Log-Checker-GUI-win64
@@ -70,12 +105,22 @@ jobs:
             dist/${{ env.EXE_NAME }}
             CD-Log-Checker-GUI-*-win64.zip
 
-      - name: Publish GitHub Release
+      - name: Upload folder artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CD-Log-Checker-GUI-win64-folder
+          path: CD-Log-Checker-GUI-*-win64-folder.zip
+
+      # Releases are created as DRAFTS so the files can be virus-scanned before
+      # anyone can download them. Publish the draft by hand on the Releases page.
+      - name: Create draft GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: CD Log Checker GUI ${{ github.ref_name }}
+          draft: true
           generate_release_notes: true
           files: |
             dist/${{ env.EXE_NAME }}
             CD-Log-Checker-GUI-*-win64.zip
+            CD-Log-Checker-GUI-*-win64-folder.zip
